@@ -6,42 +6,6 @@ def convert_to_array(input)
   input.split("\n").map {|row| row.split('')}
 end
 
-def should_toggle?(array, row, column)
-  value = array[row][column]
-
-  return false if value == FLOOR
-
-  if array[row][column] == EMPTY && num_occupied_seats(array, row, column) == 0
-    true
-  elsif array[row][column] == OCCUPIED && num_occupied_seats(array, row, column) >= 4
-    true
-  else
-    false
-  end
-end
-
-def num_occupied_seats(array, row, column)
-  occupied_count = 0
-
-  # Count direct adjacent first
-  # Up
-  occupied_count += 1 if row > 0 && array[row - 1][column] == OCCUPIED
-  # Down
-  occupied_count += 1 if row + 1 < array.length && array[row + 1][column] == OCCUPIED
-  # Left
-  occupied_count += 1 if column > 0 && array[row][column - 1] == OCCUPIED
-  # Right
-  occupied_count += 1 if column + 1 < array.first.length && array[row][column + 1] == OCCUPIED
-
-  # Count diagonal adjacent
-  occupied_count += 1 if row > 0 && column > 0 && array[row - 1][column - 1] == OCCUPIED
-  occupied_count += 1 if row + 1 < array.length && column > 0 && array[row + 1][column - 1] == OCCUPIED
-  occupied_count += 1 if row > 0 && column + 1 < array.first.length && array[row - 1][column + 1] == OCCUPIED
-  occupied_count += 1 if row + 1 < array.length && column + 1 < array.first.length && array[row + 1][column + 1] == OCCUPIED
-
-  occupied_count
-end
-
 def toggle(array, value, row, column)
   if value == EMPTY
     array[row][column] = OCCUPIED
@@ -50,14 +14,14 @@ def toggle(array, value, row, column)
   end
 end
 
-def advance_round(array)
+def advance_round(array, should_toggle_func)
   advanced_array = []
   change_count = 0
   array.length.times { advanced_array << [] }
 
   array.each_with_index do |row, row_index|
     row.each_with_index do |value, column_index|
-      if (value == OCCUPIED || value == EMPTY) && should_toggle?(array, row_index, column_index)
+      if (value == OCCUPIED || value == EMPTY) && should_toggle_func.(array, row_index, column_index)
         toggle(advanced_array, value, row_index, column_index)
         change_count += 1
       else
@@ -81,15 +45,125 @@ def count_num_occupied(array)
   count
 end
 
-def part1(input)
+def occupied_seats_problem(input, should_toggle_func)
   array = convert_to_array(input)
 
   while true
-    array, change_count = advance_round(array)
+    array, change_count = advance_round(array, should_toggle_func)
     break if change_count == 0
   end
 
   count_num_occupied(array)
+end
+
+def get_part1_should_toggle
+  num_occupied_seats = -> (array, row, column) do
+    occupied_count = 0
+    # Count direct adjacent first
+    # Up
+    occupied_count += 1 if row > 0 && array[row - 1][column] == OCCUPIED
+    # Down
+    occupied_count += 1 if row + 1 < array.length && array[row + 1][column] == OCCUPIED
+    # Left
+    occupied_count += 1 if column > 0 && array[row][column - 1] == OCCUPIED
+    # Right
+    occupied_count += 1 if column + 1 < array.first.length && array[row][column + 1] == OCCUPIED
+
+    # Count diagonal adjacent
+    occupied_count += 1 if row > 0 && column > 0 && array[row - 1][column - 1] == OCCUPIED
+    occupied_count += 1 if row + 1 < array.length && column > 0 && array[row + 1][column - 1] == OCCUPIED
+    occupied_count += 1 if row > 0 && column + 1 < array.first.length && array[row - 1][column + 1] == OCCUPIED
+    occupied_count += 1 if row + 1 < array.length && column + 1 < array.first.length && array[row + 1][column + 1] == OCCUPIED
+
+    occupied_count
+  end
+
+  should_toggle = -> (array, row, column) do
+    value = array[row][column]
+
+    return false if value == FLOOR
+
+    if array[row][column] == EMPTY && num_occupied_seats.(array, row, column) == 0
+      true
+    elsif array[row][column] == OCCUPIED && num_occupied_seats.(array, row, column) >= 4
+      true
+    else
+      false
+    end
+  end
+end
+
+def get_part2_should_toggle
+  num_occupied_seats = -> (array, row, column) do
+    occupied_count = 0
+
+    seat_found = -> (value) do
+      occupied_count += 1 if value == OCCUPIED
+      value != FLOOR
+    end
+
+    # Count direct adjacent first
+    # Up
+    tmp_row = row - 1
+    tmp_row -= 1 until tmp_row < 0 || seat_found.(array[tmp_row][column])
+
+    # Down
+    tmp_row = row + 1
+    tmp_row += 1 until tmp_row == array.length || seat_found.(array[tmp_row][column])
+
+    # Left
+    tmp_col = column - 1
+    tmp_col -= 1 until tmp_col < 0 || seat_found.(array[row][tmp_col])
+
+    # Right
+    tmp_col = column + 1
+    tmp_col += 1 until tmp_col == array.first.length || seat_found.(array[row][tmp_col])
+
+    # Count diagonal adjacent
+    tmp_col = column - 1
+    tmp_row = row - 1
+    until tmp_row < 0 || tmp_col < 0 || seat_found.(array[tmp_row][tmp_col])
+      tmp_col -= 1
+      tmp_row -= 1
+    end
+
+    tmp_col = column - 1
+    tmp_row = row + 1
+    until tmp_row == array.length || tmp_col < 0 || seat_found.(array[tmp_row][tmp_col])
+      tmp_col -= 1
+      tmp_row += 1
+    end
+
+    tmp_col = column + 1
+    tmp_row = row - 1
+    until tmp_row < 0 || tmp_col == array.first.length || seat_found.(array[tmp_row][tmp_col])
+      tmp_col += 1
+      tmp_row -= 1
+    end
+
+    tmp_col = column + 1
+    tmp_row = row + 1
+    until tmp_row == array.length || column == array.first.length || seat_found.(array[tmp_row][tmp_col])
+      tmp_col += 1
+      tmp_row += 1
+    end
+
+    occupied_count
+  end
+
+  should_toggle = -> (array, row, column) do
+    value = array[row][column]
+
+    return false if value == FLOOR
+
+    if array[row][column] == EMPTY && num_occupied_seats.(array, row, column) == 0
+      true
+    elsif array[row][column] == OCCUPIED && num_occupied_seats.(array, row, column) >= 5
+      true
+    else
+      false
+    end
+  end
 end
 
 input =
@@ -187,7 +261,6 @@ LLLLLL.LLLLLLLLLLLLLLL.LL.LLLLLLLLLLLLLLLL.LLLLLLLLLLLLLLLL.LLLLLL.LLLLLLL.LLLLL
 LLLLL..LLLLLLLLLLLL.LLLLL.LLLLLLL.LLLLLLLL.LLLLLL.LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL.LLLLLL.LLL.LL
 LLLLLL.LLLLLL.LLLLLLLLLLL.LLLLLLL.LLLLLLLLLLLLLLL.LLLLLLLLL.LLLLLLL.LLLLLLLL.LLLLLLLLLLLLL.LLLLLL"
 
-
 dummy_input =
 "L.LL.LL.LL
 LLLLLLL.LL
@@ -200,4 +273,5 @@ LLLLLLLLLL
 L.LLLLLL.L
 L.LLLLL.LL"
 
-pp part1(input)
+pp "Part 1: #{occupied_seats_problem(input, get_part1_should_toggle)}"
+pp "Part 2: #{occupied_seats_problem(input, get_part2_should_toggle)}"
