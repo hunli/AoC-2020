@@ -83,10 +83,6 @@ class DataDock
 
     memory_array
   end
-
-  def apply_value_to_memory(memory_array, value)
-
-  end
 end
 
 def part1(input)
