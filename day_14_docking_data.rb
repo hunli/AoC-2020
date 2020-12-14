@@ -1,3 +1,103 @@
+class DataDock
+  MASK = 'mask'
+  MEM = 'mem'
+
+  def initialize(input)
+    @input = input
+    @mem_values = {}
+  end
+
+  def decode
+    @input.each do |value|
+      if value.include?(MASK)
+        @current_mask = get_mask(value)
+      else
+        memory, bits = get_mem(value)
+        result_value = apply_mask(bits, @current_mask)
+        @mem_values[memory] = result_value
+      end
+    end
+
+    @mem_values.values.sum
+  end
+
+  def decode_v2
+    @input.each do |value|
+      if value.include?(MASK)
+        @current_mask = get_mask(value)
+      else
+        memory, bits = get_mem(value)
+        result_value = apply_mask_v2(memory.to_s(2), @current_mask)
+        result_value.each {|x| @mem_values[x.to_i(2)] = bits.to_i(2)}
+      end
+    end
+
+    @mem_values.values.sum
+  end
+
+  private
+
+  def get_mask(value)
+    value.split("= ").last
+  end
+
+  def get_mem(value)
+    # "mem[8] = 11",
+    mem_str, decimal = value.split("=").map(&:strip)
+    memory_location = mem_str.match(/\d+/).to_s.to_i
+    binary = decimal.to_i.to_s(2)
+    [memory_location, binary]
+  end
+
+  def apply_mask(bits, mask)
+    new_bits = '0' * (36 - bits.length) + bits
+
+    new_bits.length.times do |index|
+      if mask[index] == 'X'
+        # noop
+      elsif mask[index] == '1'
+        new_bits[index] = '1'
+      else
+        new_bits[index] = '0'
+      end
+    end
+
+    new_bits.to_i(2)
+  end
+
+  def apply_mask_v2(bits, mask)
+    new_bits = '0' * (36 - bits.length) + bits
+    memory_array = ['']
+
+    new_bits.length.times do |index|
+      if mask[index] == 'X'
+        tmp_array1 = memory_array.map { |x| x + '0' }
+        tmp_array2 = memory_array.map {|x| x + '1' }
+        memory_array = tmp_array1 + tmp_array2
+      elsif mask[index] == '1'
+        memory_array = memory_array.map {|x| x + '1' }
+      else
+        memory_array = memory_array.map {|x| x + new_bits[index] }
+      end
+    end
+
+    memory_array
+  end
+
+  def apply_value_to_memory(memory_array, value)
+
+  end
+end
+
+def part1(input)
+  dock = DataDock.new(input)
+  dock.decode
+end
+
+def part2(input)
+  dock = DataDock.new(input)
+  dock.decode_v2
+end
 
 input = [
   "mask = 11110X1XXX11001X01X00011001X00X00000",
@@ -564,120 +664,6 @@ dummy_input2 = [
   "mask = 00000000000000000000000000000000X0XX",
   "mem[26] = 1"
 ]
-
-class DataDock
-  MASK = 'mask'
-  MEM = 'mem'
-
-  def initialize(input)
-    @input = input
-    @mem_values = {}
-  end
-
-  def decode
-    @input.each do |value|
-      if value.include?(MASK)
-        @current_mask = get_mask(value)
-      else
-        memory, bits = get_mem(value)
-        result_value = apply_mask(bits, @current_mask)
-        @mem_values[memory] = result_value
-      end
-    end
-
-    @mem_values.values.sum
-  end
-
-  def decode_v2
-    @input.each do |value|
-      if value.include?(MASK)
-        @current_mask = get_mask(value)
-      else
-        memory, bits = get_mem(value)
-        result_value = apply_mask_v2(memory.to_s(2), @current_mask)
-        result_value.each {|x| @mem_values[x.to_i(2)] = bits.to_i(2)}
-      end
-    end
-
-    @mem_values.values.sum
-  end
-
-  private
-
-  def get_mask(value)
-    value.split("= ").last
-  end
-
-  def get_mem(value)
-    # "mem[8] = 11",
-    mem_str, decimal = value.split("=").map(&:strip)
-    memory_location = mem_str.match(/\d+/).to_s.to_i
-    binary = decimal.to_i.to_s(2)
-    [memory_location, binary]
-  end
-
-  def apply_mask(bits, mask)
-    new_bits = '0' * (36 - bits.length) + bits
-
-    new_bits.length.times do |index|
-      if mask[index] == 'X'
-        # noop
-      elsif mask[index] == '1'
-        new_bits[index] = '1'
-      else
-        new_bits[index] = '0'
-      end
-    end
-
-    new_bits.to_i(2)
-  end
-
-  def apply_mask_v2(bits, mask)
-    new_bits = '0' * (36 - bits.length) + bits
-    memory_array = []
-
-    new_bits.length.times do |index|
-      if mask[index] == 'X'
-        if memory_array.empty?
-          memory_array << '0'
-          memory_array << '1'
-        else
-          tmp_array1 = memory_array.map { |x| x + '0' }
-          tmp_array2 = memory_array.map {|x| x + '1' }
-          memory_array = tmp_array1 + tmp_array2
-        end
-      elsif mask[index] == '1'
-        if memory_array.empty?
-          memory_array << '1'
-        else
-          memory_array = memory_array.map {|x| x + '1' }
-        end
-      else
-        if memory_array.empty?
-          memory_array << new_bits[index]
-        else
-          memory_array = memory_array.map {|x| x + new_bits[index] }
-        end
-      end
-    end
-
-    memory_array
-  end
-
-  def apply_value_to_memory(memory_array, value)
-
-  end
-end
-
-def part1(input)
-  dock = DataDock.new(input)
-  dock.decode
-end
-
-def part2(input)
-  dock = DataDock.new(input)
-  dock.decode_v2
-end
 
 p "Part 1: #{part1(input)}"
 p "Part 2: #{part2(input)}"
