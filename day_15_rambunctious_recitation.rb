@@ -11,7 +11,7 @@ def part1(input, desired_turn = 2020)
   last_turn_seen = current_turn
 
   (current_turn..desired_turn).each do |turn|
-    if last_turn_seen.nil? || hash[last_spoken].nil?
+    if last_turn_seen.nil?
       last_turn_seen = hash[0]
       hash[0] = turn
       last_spoken = 0
