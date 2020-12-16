@@ -13,6 +13,13 @@ def ticket_scanning_error_rate(rules, nearby_tickets)
   error_rate
 end
 
+def generate_columns(rules)
+  col = []
+  keys = rules.keys
+  keys.length.times {|x| col << keys.clone}
+  col
+end
+
 def discard_invalid_tickets(rules, nearby_tickets)
   all_ranges = rules.values.flatten
 
@@ -54,7 +61,7 @@ def ensure_deletion_of_extras(col_array)
   deleted
 end
 
-def reduce_possible_rules(rules, nearby_tickets, col_array)
+def deduce_columns(rules, nearby_tickets, col_array)
   index = 0
 
   while index < nearby_tickets.length
@@ -72,29 +79,16 @@ def reduce_possible_rules(rules, nearby_tickets, col_array)
       end
     end
 
-    if ensure_deletion_of_extras(col_array) > 0
-      reset = true
-    end
-
-    if reset
-      index = 0
-    else
-      index += 1
-    end
+    reset = true if ensure_deletion_of_extras(col_array) > 0
+    index = reset ? 0 : index + 1
   end
-end
-
-def deduce_columns(rules, nearby_tickets, col_array)
-  reduce_possible_rules(rules, nearby_tickets, col_array)
 end
 
 def multiply_departure_values(columns, my_ticket)
   value = 1
 
   my_ticket.length.times do |index|
-    if columns[index].to_s.include?('departure')
-      value *= my_ticket[index]
-    end
+    value *= my_ticket[index] if columns[index].to_s.include?('departure')
   end
 
   value
@@ -102,9 +96,7 @@ end
 
 def part_2(rules, my_ticket, nearby_tickets)
   valid_nearby_tickets = discard_invalid_tickets(rules, nearby_tickets)
-  keys = rules.keys
-  col = []
-  keys.length.times {|x| col << keys.clone}
+  col = generate_columns(rules)
   deduce_columns(rules, nearby_tickets, col)
   multiply_departure_values(col, my_ticket)
 end
