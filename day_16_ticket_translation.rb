@@ -67,11 +67,6 @@ def reduce_possible_rules(rules, nearby_tickets, col_array)
         range = rules[potential_rule]
         unless range.any? {|r| r.include?(value) }
           col_array[index].delete(potential_rule)
-
-          if col_array[index].length == 1
-            remove_column(col_array[index].first, index, col_array)
-          end
-
           reset = true
         end
       end
