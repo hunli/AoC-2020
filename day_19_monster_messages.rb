@@ -742,11 +742,5 @@ dummy_received_messages = %w[
 # rules[0] => "8 11",
 # rules[8] = "42 ""
 # rules[11] = "42 31"
-
-cloned_input = Marshal.load(Marshal.dump(input))
-cloned_messages = Marshal.load(Marshal.dump(received_messages))
-p "Part 1: #{part1(cloned_input, cloned_messages)}"
-
-cloned_input = Marshal.load(Marshal.dump(input))
-cloned_messages = Marshal.load(Marshal.dump(received_messages))
+p "Part 1: #{part1(input, received_messages)}"
 p "Part 2: #{part2(input, received_messages)}"
