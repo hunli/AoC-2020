@@ -1,6 +1,9 @@
 def convert_rules!(input_hash, index = 0)
   value = input_hash[index]
-  if !value.is_a?(Array) && value =~ /\d/
+
+  if value.is_a?(Array) || !(value =~ /\d/)
+    [value]
+  elsif !value.is_a?(Array) && value =~ /\d/
     possible_values = []
     subgroup_values = []
     resolved_subgroup = []
@@ -10,12 +13,12 @@ def convert_rules!(input_hash, index = 0)
         resolved = convert_rules!(input_hash, v.to_i).flatten
 
         if subgroup_values.empty?
-          subgroup_values = resolved.flatten
+          subgroup_values = resolved
         else
           new_arr = []
 
-          subgroup_values.flatten.each do |x|
-            resolved.flatten.each do |y|
+          subgroup_values.each do |x|
+            resolved.each do |y|
               new_arr << x + y
             end
           end
@@ -31,18 +34,8 @@ def convert_rules!(input_hash, index = 0)
     possible_values += resolved_subgroup + subgroup_values
     input_hash[index] = possible_values
   else
-    [value]
+    raise "Unrecognized value #{value}"
   end
-end
-
-def count_rules_match(rules_array, messages)
-  count = 0
-
-  messages.each do |msg|
-    count += 1 if rules_array.include?(msg)
-  end
-
-  count
 end
 
 def matches?(rules, msg)
@@ -73,8 +66,18 @@ def count_occurrences!(rules, msg)
 end
 
 def part1(rules, messages)
-  convert_rules!(rules)
-  count_rules_match(rules[0], messages)
+  rules[0].split(' ').each {|index| convert_rules!(rules, index.to_i) }
+
+  exact_length = rules[42].first.length * 2 + rules[31].first.length
+
+  messages.sum do |msg|
+    next 0 unless msg.length == exact_length
+
+    clone = msg.clone
+    start_count = count_occurrences!(rules[42], clone)
+    end_count = count_occurrences!(rules[31], clone)
+    start_count == (end_count * 2) && end_count > 0 && clone.empty? ? 1 : 0
+  end
 end
 
 def part2(rules, messages)
@@ -736,8 +739,10 @@ dummy_received_messages = %w[
   aaaabbb
 ]
 
-# p part1(dummy_rules, dummy_received_messages)
-# p dummy_received_messages
+# rules[0] => "8 11",
+# rules[8] = "42 ""
+# rules[11] = "42 31"
+
 cloned_input = Marshal.load(Marshal.dump(input))
 cloned_messages = Marshal.load(Marshal.dump(received_messages))
 p "Part 1: #{part1(cloned_input, cloned_messages)}"
