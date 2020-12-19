@@ -45,9 +45,46 @@ def count_rules_match(rules_array, messages)
   count
 end
 
+def matches?(rules, msg)
+  return true if msg.empty?
+
+  start_count = count_occurrences!(rules[42], msg)
+  end_count = count_occurrences!(rules[31], msg)
+  start_count > end_count && end_count > 0 && msg.empty?
+end
+
+def count_occurrences!(rules, msg)
+  count = 0
+  found = true
+
+  while found
+    found = false
+
+    rules.each do |rule|
+      if msg.start_with?(rule)
+        count += 1
+        msg.sub!(/#{rule}/, '')
+        found = true
+      end
+    end
+  end
+
+  count
+end
+
 def part1(rules, messages)
   convert_rules!(rules)
   count_rules_match(rules[0], messages)
+end
+
+def part2(rules, messages)
+  rules[8] = "42 | 42 8"
+  rules[11] = "42 31 | 42 11 31"
+
+  # Converts all rules besides 0, 8, and 11
+  convert_rules!(rules, 42)
+  convert_rules!(rules, 31)
+  messages.sum {|msg| matches?(rules, msg) ? 1 : 0 }
 end
 
 input = {
@@ -701,4 +738,10 @@ dummy_received_messages = %w[
 
 # p part1(dummy_rules, dummy_received_messages)
 # p dummy_received_messages
-p part1(input, received_messages)
+cloned_input = Marshal.load(Marshal.dump(input))
+cloned_messages = Marshal.load(Marshal.dump(received_messages))
+p "Part 1: #{part1(cloned_input, cloned_messages)}"
+
+cloned_input = Marshal.load(Marshal.dump(input))
+cloned_messages = Marshal.load(Marshal.dump(received_messages))
+p "Part 2: #{part2(input, received_messages)}"
