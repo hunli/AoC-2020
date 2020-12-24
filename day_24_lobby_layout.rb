@@ -1,3 +1,132 @@
+class Tile
+  attr_accessor :color
+
+  def initialize
+    @vertical = 0
+    @horizontal = 0
+    @color = :black
+  end
+
+  def toggle_color
+    if @color == :white
+      @color = :black
+    else
+      @color = :white
+    end
+  end
+end
+
+def get_coords(line)
+  vertical = 0
+  horizontal = 0
+  index = 0
+
+  while index < line.length
+    char = line[index]
+
+    case char
+    when 'n'
+      vertical += 1
+      index += 1
+      horizontal += line[index] == 'e' ? 0.5 : -0.5
+    when 'e'
+      horizontal += 1
+    when 'w'
+      horizontal -= 1
+    when 's'
+      vertical -= 1
+      index += 1
+      horizontal += line[index] == 'e' ? 0.5 : -0.5
+    else
+      raise "Unkonwn orientation: #{x}"
+    end
+
+    index += 1
+  end
+
+  "#{horizontal.to_f},#{vertical.to_f}"
+end
+
+def get_tile_hash(input)
+  hash = {}
+  input.each_with_index do |pattern, index|
+    coord = get_coords(pattern)
+
+    if hash[coord].nil?
+      hash[coord] = Tile.new
+    else
+      hash[coord].toggle_color
+    end
+  end
+
+  hash
+end
+
+def get_adjacent_tile(coordinate)
+  adjacent_list = []
+  x, y = coordinate.split(",").map(&:to_f)
+
+  adjacent_list << "#{x + 1},#{y}"
+  adjacent_list << "#{x - 1},#{y}"
+  adjacent_list << "#{x + 0.5},#{y + 1}"
+  adjacent_list << "#{x - 0.5},#{y + 1}"
+  adjacent_list << "#{x + 0.5},#{y - 1}"
+  adjacent_list << "#{x - 0.5},#{y - 1}"
+
+  adjacent_list
+end
+
+def get_adjacent_tiles(hash)
+  adjacent_list = []
+
+  hash.keys.each do |coord|
+    adjacent_list += get_adjacent_tile(coord)
+    adjacent_list << coord
+  end
+
+  adjacent_list
+end
+
+def count_black(hash)
+  sum = 0
+  hash.values.each {|t| sum += 1 if t.color == :black }
+  sum
+end
+
+def part1(input)
+  hash = get_tile_hash(input)
+  count_black(hash)
+end
+
+def part2(input, days = 10)
+  hash = get_tile_hash(input)
+  current_day = 0
+
+  while current_day < days
+    new_hash = {}
+    adjacent_tile_list = get_adjacent_tiles(hash)
+    adjacent_tile_list.each do |coord|
+      adjacent = get_adjacent_tile(coord)
+      sum = adjacent.sum {|x| hash[x] && hash[x].color == :black ? 1 : 0 }
+
+      if hash[coord] && hash[coord].color == :black
+        if sum != 0 && sum <= 2
+          new_hash[coord] = Tile.new
+        end
+      else
+        if sum == 2
+          new_hash[coord] = Tile.new
+        end
+      end
+    end
+
+    hash = new_hash
+    current_day += 1
+  end
+
+  count_black(hash)
+end
+
 input = %w[
   wnwwswnewewnwwnesewseewnesewnwsenw
   sesesewseseseenesesesesenwseseseseseewne
@@ -553,75 +682,5 @@ dummy_input3 = %w[
   wseweeenwnesenwwwswnew
 ]
 
-class Tile
-  attr_accessor :color
-
-  def initialize
-    @vertical = 0
-    @horizontal = 0
-    @color = :black
-  end
-
-  def toggle_color
-    if @color == :white
-      @color = :black
-    else
-      @color = :white
-    end
-  end
-end
-
-def get_coords(line)
-  vertical = 0
-  horizontal = 0
-  index = 0
-
-  while index < line.length
-    char = line[index]
-
-    case char
-    when 'n'
-      vertical += 1
-      index += 1
-      horizontal += line[index] == 'e' ? 0.5 : -0.5
-    when 'e'
-      horizontal += 1
-    when 'w'
-      horizontal -= 1
-    when 's'
-      vertical -= 1
-      index += 1
-      horizontal += line[index] == 'e' ? 0.5 : -0.5
-    else
-      raise "Unkonwn orientation: #{x}"
-    end
-
-    index += 1
-  end
-
-  "#{horizontal.to_f},#{vertical}"
-end
-
-def get_tile_hash(input)
-  hash = {}
-  input.each_with_index do |pattern, index|
-    coord = get_coords(pattern)
-
-    if hash[coord].nil?
-      hash[coord] = Tile.new
-    else
-      hash[coord].toggle_color
-    end
-  end
-
-  hash
-end
-
-def part1(input)
-  sum = 0
-  hash = get_tile_hash(input)
-  hash.values.each {|t| sum += 1 if t.color == :black }
-  sum
-end
-
 pp "Part 1: #{part1(input)}"
+pp "Part 2: #{part2(input, 100)}"
